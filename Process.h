@@ -71,12 +71,30 @@ namespace ktl {
             return &UnknownProcess;
         }     
 
+        static PCUNICODE_STRING GetSystemProcessName()
+        {
+            static const UNICODE_STRING SystemProcess = RTL_CONSTANT_STRING(L"System");
+            return &SystemProcess;
+        }
+
     private:
 
         NTSTATUS InitProcessName()
         {
             if (_ProcessName != nullptr)
             {
+                return STATUS_SUCCESS;
+            }
+
+            // System process - special case this one - we still need to allocate memory for it though.
+            if (HandleToUlong(PsGetProcessId(_process)) == 4)
+            {
+                _ProcessName = reinterpret_cast<PUNICODE_STRING>(ExAllocatePool2(POOL_FLAG_NON_PAGED, sizeof(UNICODE_STRING), PROCESS_POOLTAG));
+                if (nullptr == _ProcessName)
+                {
+                    return STATUS_INSUFFICIENT_RESOURCES;
+                }
+                *_ProcessName = *GetSystemProcessName();                              
                 return STATUS_SUCCESS;
             }
 

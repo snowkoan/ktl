@@ -11,8 +11,7 @@ public:
 		return &singleton;
 	}
 
-	// Win11+
-	// Handle older operating systems, where this is not available
+	// Win11 22H2
 	_IRQL_requires_max_(DISPATCH_LEVEL)
 		NTSTATUS
 		FLTAPI
@@ -29,6 +28,22 @@ public:
 		{
 			return _FltGetCopyInformationFromCallbackData(Data, CopyInformation);
 		}
+	}
+
+	// Win11 22H2
+	bool IoCheckFileObjectOpenedAsCopySource(
+		_In_ PFILE_OBJECT FileObject
+	)
+	{
+		return (nullptr == _IoCheckFileObjectOpenedAsCopySource) ? false : _IoCheckFileObjectOpenedAsCopySource(FileObject);
+	}
+
+	// Win11 22H2
+	bool IoCheckFileObjectOpenedAsCopyDestination(
+		_In_ PFILE_OBJECT FileObject
+	)
+	{
+		return (nullptr == _IoCheckFileObjectOpenedAsCopyDestination) ? false : _IoCheckFileObjectOpenedAsCopyDestination(FileObject);
 	}
 
 	// This never got into the headers and the docs say that it may disappear one day
@@ -55,7 +70,6 @@ public:
 		}
 	}
 
-
 private:
 
 	typedef NTSTATUS(FLTAPI* PFN_FltGetCopyInformationFromCallbackData)(
@@ -72,6 +86,19 @@ private:
 		__out_opt PULONG ReturnLength
 		);
 	PFN_ZwQueryInformationProcess _ZwQueryInformationProcess;
+
+	typedef
+		BOOLEAN(*PFN_IO_CHECK_FILE_OBJECT_OPENED_AS_COPY_SOURCE)(
+			_In_ PFILE_OBJECT FileObject
+			);
+	PFN_IO_CHECK_FILE_OBJECT_OPENED_AS_COPY_SOURCE _IoCheckFileObjectOpenedAsCopySource;
+
+	typedef
+		BOOLEAN(*PFN_IO_CHECK_FILE_OBJECT_OPENED_AS_COPY_DESTINATION)(
+			_In_ PFILE_OBJECT FileObject
+			);
+	PFN_IO_CHECK_FILE_OBJECT_OPENED_AS_COPY_DESTINATION _IoCheckFileObjectOpenedAsCopyDestination;
+
 
 
 	void* GetExportedNtFunction(PCUNICODE_STRING functionName)
@@ -92,6 +119,11 @@ private:
 
 		UNICODE_STRING routineName = RTL_CONSTANT_STRING(L"ZwQueryInformationProcess");
 		_ZwQueryInformationProcess = reinterpret_cast<PFN_ZwQueryInformationProcess>(GetExportedNtFunction(&routineName));
+		
+		routineName = RTL_CONSTANT_STRING(L"IoCheckFileObjectOpenedAsCopySource");;
+		_IoCheckFileObjectOpenedAsCopySource = reinterpret_cast<PFN_IO_CHECK_FILE_OBJECT_OPENED_AS_COPY_SOURCE>(GetExportedNtFunction(&routineName));
 
+		routineName = RTL_CONSTANT_STRING(L"IoCheckFileObjectOpenedAsCopyDestination");
+		_IoCheckFileObjectOpenedAsCopyDestination = reinterpret_cast<PFN_IO_CHECK_FILE_OBJECT_OPENED_AS_COPY_DESTINATION>(GetExportedNtFunction(&routineName));
 	}
 };
