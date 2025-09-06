@@ -6,26 +6,26 @@ using namespace ktl;
 #endif
 
 
-void ExecutiveResource::Init() {
+void EResource::Init() {
 	ExInitializeResourceLite(&m_Res);
 }
 
-void ExecutiveResource::Delete() {
+void EResource::Delete() {
 	ExDeleteResourceLite(&m_Res);
 }
 
-void ExecutiveResource::Lock() {
+void EResource::Lock() {
 	ExEnterCriticalRegionAndAcquireResourceExclusive(&m_Res);
 }
 
-void ExecutiveResource::Unlock() {
+void EResource::Unlock() {
 	ExReleaseResourceAndLeaveCriticalRegion(&m_Res);
 }
 
-void ExecutiveResource::LockShared() {
+void EResource::LockShared() {
 	ExEnterCriticalRegionAndAcquireResourceShared(&m_Res);
 }
 
-void ExecutiveResource::UnlockShared() {
+void EResource::UnlockShared() {
 	Unlock();
 }

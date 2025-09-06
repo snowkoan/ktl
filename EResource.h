@@ -4,7 +4,7 @@
 namespace ktl {
 #endif
 
-class ExecutiveResource {
+class EResource {
 public:
 	void Init();
 	void Delete();

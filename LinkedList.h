@@ -1,17 +1,22 @@
 #pragma once
 
 #include "Locker.h"
+#include "EResource.h"
 
 #ifdef KTL_NAMESPACE
 namespace ktl {
 #endif
 
-	template<typename T, typename TLock = FastMutex>
+	template<typename T, typename TLock = EResource>
 	struct LinkedList {
 		void Init() {
 			InitializeListHead(&m_Head);
 			m_Lock.Init();
 			m_Count = 0;
+		}
+
+		void Finalize() {
+			m_Lock.Delete();
 		}
 
 		bool IsEmpty() const {
@@ -20,12 +25,6 @@ namespace ktl {
 
 		ULONG GetCount() const {
 			return m_Count;
-		}
-
-		void Clear() {
-			Locker locker(m_Lock);
-			InitializeListHead(&m_Head);
-			m_Count = 0;
 		}
 
 		void AddHead(T* item) {
@@ -81,7 +80,7 @@ namespace ktl {
 
 		template<typename F>
 		T* Find(F predicate) {
-			Locker locker(m_Lock);
+			SharedLocker locker(m_Lock);
 			for (auto node = m_Head.Flink; node != &m_Head; node = node->Flink) {
 				auto item = CONTAINING_RECORD(node, T, Link);
 				if (predicate(item))
@@ -92,7 +91,7 @@ namespace ktl {
 
 		template<typename F>
 		T* ForEach(F action) {
-			Locker locker(m_Lock);
+			SharedLocker locker(m_Lock);
 			for (auto node = m_Head.Flink; node != &m_Head; node = node->Flink) {
 				auto item = CONTAINING_RECORD(node, T, Link);
 				action(item);
